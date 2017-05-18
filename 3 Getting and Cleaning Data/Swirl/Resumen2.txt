@@ -1,0 +1,638 @@
+| Group cran by the package variable and store the result in a new object called by_package.
+
+> by_package <- group_by(cran, package)
+
+|> by_package
+Source: local data frame [225,468 x 11]
+Groups: package [6,023]
+
+       X       date     time    size r_version r_arch      r_os      package version country
+   <int>      <chr>    <chr>   <int>     <chr>  <chr>     <chr>        <chr>   <chr>   <chr>
+1      1 2014-07-08 00:54:41   80589     3.1.0 x86_64   mingw32    htmltools   0.2.4      US
+2      2 2014-07-08 00:59:53  321767     3.1.0 x86_64   mingw32      tseries 0.10-32      US
+3      3 2014-07-08 00:47:13  748063     3.1.0 x86_64 linux-gnu        party  1.0-15      US
+4      4 2014-07-08 00:48:05  606104     3.1.0 x86_64 linux-gnu        Hmisc  3.14-4      US
+5      5 2014-07-08 00:46:50   79825     3.0.2 x86_64 linux-gnu       digest   0.6.4      CA
+6      6 2014-07-08 00:48:04   77681     3.1.0 x86_64 linux-gnu randomForest   4.6-7      US
+7      7 2014-07-08 00:48:35  393754     3.1.0 x86_64 linux-gnu         plyr   1.8.1      US
+8      8 2014-07-08 00:47:30   28216     3.0.2 x86_64 linux-gnu      whisker   0.3-2      US
+9      9 2014-07-08 00:54:58    5928      <NA>   <NA>      <NA>         Rcpp  0.10.4      CN
+10    10 2014-07-08 00:15:35 2206029     3.0.2 x86_64 linux-gnu     hflights     0.1      US
+# ... with 225,458 more rows, and 1 more variables: ip_id <int>
+
+| That's exactly what you'll get if you use summarize() to apply mean(size) to the grouped
+| data in by_package. Give it a shot.
+
+>  summarize(by_package, mean(size))
+# A tibble: 6,023 × 2
+       package `mean(size)`
+         <chr>        <dbl>
+1           A3     62194.96
+2          abc   4826665.00
+3     abcdeFBA    455979.87
+4  ABCExtremes     22904.33
+5     ABCoptim     17807.25
+6        ABCp2     30473.33
+7     abctools   2589394.00
+8          abd    453631.24
+9         abf2     35692.62
+10       abind     32938.88
+# ... with 6,013 more rows
+
+| Let's take it a step further. I just opened an R script for you that contains a partially
+| constructed call to summarize(). Follow the instructions in the script comments.
+|
+| When you are ready to move on, save the script and type submit(), or type reset() to reset
+| the script to its original state.
+
+> submit()
+
+pack_sum <- summarize(by_package,
+                      count = n() ,
+                      unique = n_distinct(ip_id),
+                      countries = n_distinct(country) ,
+                      avg_bytes = mean(size) )
+> pack_sum
+# A tibble: 6,023 × 5
+       package count unique countries  avg_bytes
+         <chr> <int>  <int>     <int>      <dbl>
+1           A3    25     24        10   62194.96
+2          abc    29     25        16 4826665.00
+3     abcdeFBA    15     15         9  455979.87
+
+
+ The 'count' column, created with n(), contains the total number of rows (i.e. downloads)
+| for each package. The 'unique' column, created with n_distinct(ip_id), gives the total
+| number of unique downloads for each package, as measured by the number of distinct ip_id's.
+| The 'countries' column, created with n_distinct(country), provides the number of countries
+| in which each package was downloaded. And finally, the 'avg_bytes' column, created with
+| mean(size), contains the mean download size (in bytes) for each package.
+
+| We need to know the value of 'count' that splits the data into the top 1% and bottom 99% of
+| packages based on total downloads. In statistics, this is called the 0.99, or 99%, sample
+| quantile. Use quantile(pack_sum$count, probs = 0.99) to determine this number.
+
+> quantile(pack_sum$count, probs = 0.99)
+   99%
+679.56
+
+| Now we can isolate only those packages which had more than 679 total downloads. Use
+| filter() to select all rows from pack_sum for which 'count' is strictly greater (>) than
+| 679. Store the result in a new object called top_counts.
+
+> top_counts <- filter(pack_sum,count > 679)
+
+> top_counts
+# A tibble: 61 × 5
+      package count unique countries   avg_bytes
+        <chr> <int>  <int>     <int>       <dbl>
+1      bitops  1549   1408        76   28715.046
+2         car  1008    837        64 1229122.307
+3     caTools   812    699        64  176589.018
+
+ There are only 61 packages in our top 1%, so we'd like to see all of them. Since dplyr only
+| shows us the first 10 rows, we can use the View() function to see more.
+
+
+| View all 61 rows with View(top_counts). Note that the 'V' in View() is capitalized.
+
+> View(top_counts)
+
+| arrange() the rows of top_counts based on the 'count' column and assign the result to a new
+| object called top_counts_sorted. We want the packages with the highest number of downloads
+| at the top, which means we want 'count' to be in descending order. If you need help, check
+| out ?arrange and/or ?desc.
+
+> top_counts_sorted <- arrange(top_counts, desc(count) )
+
+| Now use View() again to see all 61 rows of top_counts_sorted.
+
+> View(top_counts_sorted)
+
+| Like we did with 'count', let's find the 0.99, or 99%, quantile for the 'unique' variable
+| with quantile(pack_sum$unique, probs = 0.99).
+
+> quantile(pack_sum$unique, probs = 0.99)
+99%
+465
+
+| Apply filter() to pack_sum to select all rows corresponding to values of 'unique' that are
+| strictly greater than 465. Assign the result to a object called top_unique.
+
+> top_unique <- filter(pack_sum, unique > 465)
+
+> View(top_unique)
+
+| Now arrange() top_unique by the 'unique' column, in descending order, to see which packages
+| were downloaded from the greatest number of unique IP addresses. Assign the result to
+| top_unique_sorted.
+
+> top_unique_sorted <- arrange(top_unique, desc(unique))
+
+> View(top_unique_sorted)
+
+| I've opened up a script that contains code similar to what you've seen so far. Don't change
+| anything. Just study it for a minute, make sure you understand everything that's there,
+| then submit() when you are ready to move on.
+
+by_package <- group_by(cran, package)
+pack_sum <- summarize(by_package,
+                      count = n(),
+                      unique = n_distinct(ip_id),
+                      countries = n_distinct(country),
+                      avg_bytes = mean(size))
+
+
+top_countries <- filter(pack_sum, countries > 60)
+result1 <- arrange(top_countries, desc(countries), avg_bytes)
+
+
+print(result1)
+
+> submit()
+
+| Sourcing your script...
+
+# A tibble: 46 × 5
+        package count unique countries  avg_bytes
+          <chr> <int>  <int>     <int>      <dbl>
+1          Rcpp  3195   2044        84 2512100.35
+2        digest  2210   1894        83  120549.29
+3       stringr  2267   1948        82   65277.17
+
+| That's exactly what we've done in this script. The result is equivalent, but the code is
+| much less readable and some of the arguments are far away from the function to which they
+| belong. Again, just try to understand what is going on here, then submit() when you are
+| ready to see a better solution.
+
+# Don't change any of the code below. Just type submit()
+# when you think you understand it. If you find it
+# confusing, you're absolutely right!
+
+result2 <-
+  arrange(
+    filter(
+      summarize(
+        group_by(cran,
+                 package
+        ),
+        count = n(),
+        unique = n_distinct(ip_id),
+        countries = n_distinct(country),
+        avg_bytes = mean(size)
+      ),
+      countries > 60
+    ),
+    desc(countries),
+    avg_bytes
+  )
+
+print(result2)
+
+
+> submit()
+
+| Sourcing your script...
+
+# A tibble: 46 × 5
+        package count unique countries  avg_bytes
+          <chr> <int>  <int>     <int>      <dbl>
+1          Rcpp  3195   2044        84 2512100.35
+2        digest  2210   1894        83  120549.29
+3       stringr  2267   1948        82   65277.17
+
+| In this script, we've used a special chaining operator, %>%, which was originally
+| introduced in the magrittr R package and has now become a key component of dplyr. You can
+| pull up the related documentation with ?chain. The benefit of %>% is that it allows us to
+| chain the function calls in a linear fashion. The code to the right of %>% operates on the
+| result from the code to the left of %>%.
+|
+result3 <-
+  cran %>%
+  group_by(package) %>%
+  summarize(count = n(),
+            unique = n_distinct(ip_id),
+            countries = n_distinct(country),
+            avg_bytes = mean(size)
+  ) %>%
+  filter(countries > 60) %>%
+  arrange(desc(countries), avg_bytes)
+
+# Print result to console
+print(result3)
+
+
+> submit()
+
+| Sourcing your script...
+
+# A tibble: 46 × 5
+        package count unique countries  avg_bytes
+          <chr> <int>  <int>     <int>      <dbl>
+1          Rcpp  3195   2044        84 2512100.35
+2        digest  2210   1894        83  120549.29
+3       stringr  2267   1948        82   65277.17
+
+
+cran %>%
+  select(ip_id,country,package,size) %>%
+	print
+
+> submit()
+
+  # A tibble: 225,468 × 4
+     ip_id country      package    size
+     <int>   <chr>        <chr>   <int>
+  1      1      US    htmltools   80589
+  2      2      US      tseries  321767
+  3      3      US        party  748063
+
+  cran %>%
+  select(ip_id, country, package, size) %>%
+  mutate(size_mb = size / 2^20) %>%
+        print
+
+> submit()
+
+# A tibble: 225,468 × 5
+   ip_id country      package    size     size_mb
+   <int>   <chr>        <chr>   <int>       <dbl>
+1      1      US    htmltools   80589 0.076855659
+2      2      US      tseries  321767 0.306860924
+3      3      US        party  748063 0.713408470
+
+cran %>%
+  select(ip_id, country, package, size) %>%
+  mutate(size_mb = size / 2^20) %>%
+   filter(size_mb <= 0.5) %>%
+        print
+
+> submit()
+
+# A tibble: 142,021 × 5
+   ip_id country      package   size     size_mb
+   <int>   <chr>        <chr>  <int>       <dbl>
+1      1      US    htmltools  80589 0.076855659
+2      2      US      tseries 321767 0.306860924
+3      4      CA       digest  79825 0.076127052
+
+cran %>%
+  select(ip_id, country, package, size) %>%
+  mutate(size_mb = size / 2^20) %>%
+  filter(size_mb <= 0.5) %>%
+  arrange(desc(size_mb)) %>%
+        print
+
+        # A tibble: 142,021 × 5
+           ip_id country               package   size   size_mb
+           <int>   <chr>                 <chr>  <int>     <dbl>
+        1  11034      DE                  phia 524232 0.4999466
+        2   9643      US                   tis 524152 0.4998703
+        3   1542      IN               RcppSMC 524060 0.4997826
+
+
+> library(tidyr)
+
+| The author of tidyr, Hadley Wickham, discusses his philosophy of tidy data in his 'Tidy
+| Data' paper:
+|
+| http://vita.had.co.nz/papers/tidy-data.pdf
+
+| Tidy data is formatted in a standard way that facilitates exploration and analysis and
+| works seamlessly with other tidy data tools. Specifically, tidy data satisfies three
+| conditions:
+|
+| 1) Each variable forms a column
+|
+| 2) Each observation forms a row
+|
+| 3) Each type of observational unit forms a table
+
+This question are the most common symptoms of messy data.
+| Let's work through a simple example of each of these five cases, then tidy some real data.
+
+1: Column headers are values, not variable names
+2: Variables are stored in both rows and columns
+3: A single observational unit is stored in multiple tables
+4: Multiple types of observational units are stored in the same table
+5: Multiple variables are stored in one column
+
+
+1: Column headers are values, not variable names
+> students
+  grade male female
+1     A    1      5
+2     B    5      0
+3     C    5      2
+4     D    5      5
+5     E    7      4
+
+> gather(students, sex, count, -grade)
+   grade    sex count
+1      A   male     1
+2      B   male     5
+3      C   male     5
+4      D   male     5
+5      E   male     7
+6      A female     5
+7      B female     0
+8      C female     2
+9      D female     5
+10     E female     4
+
+5: Multiple variables are stored in one column
+
+> students2
+  grade male_1 female_1 male_2 female_2
+1     A      3        4      3        4
+2     B      6        4      3        5
+3     C      7        4      3        8
+4     D      4        0      8        1
+5     E      1        1      2        7
+
+> res <- gather(students2, sex_class, count, -grade)
+
+> res
+   grade sex_class count
+1      A    male_1     3
+2      B    male_1     6
+3      C    male_1     7
+4      D    male_1     4
+5      E    male_1     1
+6      A  female_1     4
+7      B  female_1     4
+8      C  female_1     4
+9      D  female_1     0
+10     E  female_1     1
+11     A    male_2     3
+12     B    male_2     3
+13     C    male_2     3
+14     D    male_2     8
+15     E    male_2     2
+16     A  female_2     4
+17     B  female_2     5
+18     C  female_2     8
+19     D  female_2     1
+20     E  female_2     7
+
+> separate(data = res, col = sex_class, into = c("sex", "class") )
+   grade    sex class count
+1      A   male     1     3
+2      B   male     1     6
+3      C   male     1     7
+4      D   male     1     4
+5      E   male     1     1
+6      A female     1     4
+7      B female     1     4
+8      C female     1     4
+9      D female     1     0
+10     E female     1     1
+11     A   male     2     3
+12     B   male     2     3
+13     C   male     2     3
+14     D   male     2     8
+15     E   male     2     2
+16     A female     2     4
+17     B female     2     5
+18     C female     2     8
+19     D female     2     1
+20     E female     2     7
+
+students2 %>%
+  gather( sex_class, count, -grade ) %>%
+  separate(col = sex_class, into = c("sex", "class") ) %>%
+  print
+
+2: Variables are stored in both rows and columns
+
+> students3
+    name    test class1 class2 class3 class4 class5
+1  Sally midterm      A   <NA>      B   <NA>   <NA>
+2  Sally   final      C   <NA>      C   <NA>   <NA>
+3   Jeff midterm   <NA>      D   <NA>      A   <NA>
+4   Jeff   final   <NA>      E   <NA>      C   <NA>
+5  Roger midterm   <NA>      C   <NA>   <NA>      B
+6  Roger   final   <NA>      A   <NA>   <NA>      A
+7  Karen midterm   <NA>   <NA>      C      A   <NA>
+8  Karen   final   <NA>   <NA>      C      A   <NA>
+9  Brian midterm      B   <NA>   <NA>   <NA>      A
+10 Brian   final      B   <NA>   <NA>   <NA>      C
+
+students3 %>%
+  gather( class , grade ,class1:class5 , na.rm = TRUE) %>%
+  print
+
+  name    test  class grade
+1  Sally midterm class1     A
+2  Sally   final class1     C
+9  Brian midterm class1     B
+10 Brian   final class1     B
+13  Jeff midterm class2     D
+14  Jeff   final class2     E
+15 Roger midterm class2     C
+16 Roger   final class2     A
+21 Sally midterm class3     B
+22 Sally   final class3     C
+27 Karen midterm class3     C
+28 Karen   final class3     C
+33  Jeff midterm class4     A
+34  Jeff   final class4     C
+37 Karen midterm class4     A
+38 Karen   final class4     A
+45 Roger midterm class5     B
+46 Roger   final class5     A
+49 Brian midterm class5     A
+50 Brian   final class5     C
+
+students3 %>%
+  gather(class, grade, class1:class5, na.rm = TRUE) %>%
+  spread( test ,grade ) %>%
+  print
+
+  name  class final midterm
+1  Brian class1     B       B
+2  Brian class5     C       A
+3   Jeff class2     E       D
+4   Jeff class4     C       A
+5  Karen class3     C       C
+6  Karen class4     A       A
+7  Roger class2     A       C
+8  Roger class5     A       B
+9  Sally class1     C       A
+10 Sally class3     C       B
+
+library(readr)
+
+students3 %>%
+  gather(class, grade, class1:class5, na.rm = TRUE) %>%
+  spread(test, grade) %>%
+  mutate(class = parse_number(class)) %>%
+  print
+
+  name class final midterm
+1  Brian     1     B       B
+2  Brian     5     C       A
+3   Jeff     2     E       D
+4   Jeff     4     C       A
+5  Karen     3     C       C
+6  Karen     4     A       A
+7  Roger     2     A       C
+8  Roger     5     A       B
+9  Sally     1     C       A
+10 Sally     3     C       B
+
+4: Multiple types of observational units are stored in the same table
+
+> students4
+    id  name sex class midterm final
+1  168 Brian   F     1       B     B
+2  168 Brian   F     5       A     C
+3  588 Sally   M     1       A     C
+4  588 Sally   M     3       B     C
+5  710  Jeff   M     2       D     E
+6  710  Jeff   M     4       A     C
+7  731 Roger   F     2       C     A
+8  731 Roger   F     5       B     A
+9  908 Karen   M     3       C     C
+10 908 Karen   M     4       A     A
+
+student_info <- students4 %>%
+  select( id,name , sex) %>%
+  print
+
+  id  name sex
+1  168 Brian   F
+2  168 Brian   F
+3  588 Sally   M
+4  588 Sally   M
+5  710  Jeff   M
+6  710  Jeff   M
+7  731 Roger   F
+8  731 Roger   F
+9  908 Karen   M
+10 908 Karen   M
+
+student_info <- students4 %>%
+  select(id, name, sex) %>%
+        unique() %>%
+  print
+
+  id  name sex
+1 168 Brian   F
+3 588 Sally   M
+5 710  Jeff   M
+7 731 Roger   F
+9 908 Karen   M
+
+gradebook <- students4 %>%
+        select(id, class, midterm,final) %>%
+  print
+
+  id class midterm final
+1  168     1       B     B
+2  168     5       A     C
+3  588     1       A     C
+4  588     3       B     C
+5  710     2       D     E
+6  710     4       A     C
+7  731     2       C     A
+8  731     5       B     A
+9  908     3       C     C
+10 908     4       A     A
+
+3: A single observational unit is stored in multiple tables
+
+> passed
+   name class final
+1 Brian     1     B
+2 Roger     2     A
+3 Roger     5     A
+4 Karen     4     A
+
+> failed
+   name class final
+1 Brian     5     C
+2 Sally     1     C
+3 Sally     3     C
+4  Jeff     2     E
+5  Jeff     4     C
+6 Karen     3     C
+
+> passed <- passed %>% mutate(status = "passed")
+
+> failed <- failed %>% mutate(status = "failed")
+
+> bind_rows(passed,failed)
+    name class final status
+1  Brian     1     B passed
+2  Roger     2     A passed
+3  Roger     5     A passed
+4  Karen     4     A passed
+5  Brian     5     C failed
+6  Sally     1     C failed
+7  Sally     3     C failed
+8   Jeff     2     E failed
+9   Jeff     4     C failed
+10 Karen     3     C failed
+
+
+
+Real Data
+> sat
+# A tibble: 6 × 10
+  score_range read_male read_fem read_total math_male math_fem math_total write_male write_fem write_total
+        <chr>     <int>    <int>      <int>     <int>    <int>      <int>      <int>     <int>       <int>
+1     700-800     40151    38898      79049     74461    46040     120501      31574     39101       70675
+2     600-690    121950   126084     248034    162564   133954     296518     100963    125368      226331
+3     500-590    227141   259553     486694    233141   257678     490819     202326    247239      449565
+4     400-490    242554   296793     539347    204670   288696     493366     262623    302933      565556
+5     300-390    113568   133473     247041     82468   131025     213493     146106    144381      290487
+6     200-290     30728    29154      59882     18788    26562      45350      32500     24933       57433
+
+sat %>%
+  select(-contains("total")) %>%
+  gather(part_sex, count, -score_range) %>%
+  separate(col = part_sex, into = c("part", "sex")) %>%
+  print
+
+  # A tibble: 36 × 4
+     score_range  part   sex  count
+  *        <chr> <chr> <chr>  <int>
+  1      700-800  read  male  40151
+  2      600-690  read  male 121950
+  3      500-590  read  male 227141
+  4      400-490  read  male 242554
+  5      300-390  read  male 113568
+  6      200-290  read  male  30728
+  7      700-800  read   fem  38898
+  8      600-690  read   fem 126084
+  9      500-590  read   fem 259553
+  10     400-490  read   fem 296793
+  # ... with 26 more rows
+
+  sat %>%
+    select(-contains("total")) %>%
+    gather(part_sex, count, -score_range) %>%
+    separate(part_sex, c("part", "sex")) %>%
+    group_by(part, sex) %>%
+    mutate(total = sum(count),
+           prop = count / total
+    ) %>% print
+
+    Source: local data frame [36 x 6]
+    Groups: part, sex [6]
+
+       score_range  part   sex  count  total       prop
+             <chr> <chr> <chr>  <int>  <int>      <dbl>
+    1      700-800  read  male  40151 776092 0.05173485
+    2      600-690  read  male 121950 776092 0.15713343
+    3      500-590  read  male 227141 776092 0.29267278
+    4      400-490  read  male 242554 776092 0.31253253
+    5      300-390  read  male 113568 776092 0.14633317
+    6      200-290  read  male  30728 776092 0.03959324
+    7      700-800  read   fem  38898 883955 0.04400450
+    8      600-690  read   fem 126084 883955 0.14263622
+    9      500-590  read   fem 259553 883955 0.29362694
+    10     400-490  read   fem 296793 883955 0.33575578
+    # ... with 26 more rows
+    
