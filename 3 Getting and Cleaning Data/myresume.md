@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## Reading HTML
 ```sh
 connection <- url("http://biostat.jhsph.edu/~jleek/contact.html")
@@ -870,4 +869,3 @@ length(Year2012)
 length(which(wday(Year2012, label = T) == "Mon")) 
 [1] 47
 ```
->>>>>>> origin/master
