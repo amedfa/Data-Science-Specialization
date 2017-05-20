@@ -91,4 +91,4 @@ write.table(tidy_data, file = "./tidy_data.txt")
 
 
 library(knitr)
-knit2html("codebook.Rmd")
+knit2html("CodeBook.Rmd")
